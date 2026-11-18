@@ -3,8 +3,6 @@ import pandas as pd
 
 st.title("MTG Limited Advisor")
 
-st.subheader("17Lands CSV Inspector")
-
 uploaded_file = st.file_uploader(
     "Upload card-ratings CSV",
     type=["csv"]
@@ -12,25 +10,43 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file:
 
-    try:
+    df = pd.read_csv(
+        uploaded_file,
+        on_bad_lines="skip"
+    )
 
-        df = pd.read_csv(
-            uploaded_file,
-            on_bad_lines="skip"
-        )
+    column_map = {
+        "Name": "card_name",
+        "Color": "color",
+        "Rarity": "rarity",
+        "# GP": "games_played",
+        "% GP": "gp_percent",
+        "GP WR": "gp_wr",
+        "GIH WR": "gih_wr",
+        "GNS WR": "gns_wr",
+        "IIH": "iih"
+    }
 
-        st.success(
-            f"Loaded {len(df)} rows"
-        )
+    df = df.rename(columns=column_map)
 
-        st.subheader("Detected Columns")
+    columns_to_keep = [
+        "card_name",
+        "color",
+        "rarity",
+        "games_played",
+        "gp_percent",
+        "gp_wr",
+        "gih_wr",
+        "gns_wr",
+        "iih"
+    ]
 
-        st.write(df.columns.tolist())
+    clean_df = df[columns_to_keep]
 
-        st.subheader("Preview")
+    st.success(
+        f"Loaded {len(clean_df)} cards"
+    )
 
-        st.dataframe(df.head(20))
+    st.subheader("Clean Ratings Table")
 
-    except Exception as e:
-
-        st.error(str(e))
+    st.dataframe(clean_df)
