@@ -505,3 +505,76 @@ The system should explain:
 WHY.
 
 The goal is to learn from the repeated decisions of successful players and combine those decisions with 17Lands statistics to create a transparent and explainable Limited Advisor.
+
+---
+
+# Progress Log
+
+## 2026-11-18
+
+### Infrastructure
+
+Completed:
+
+- GitHub repository created
+- Streamlit Cloud application deployed
+- Supabase project created
+
+### Database
+
+Created tables:
+
+- cards
+- card_stats
+- card_metadata
+- card_rules
+- pools
+- pool_cards
+- trophy_decks
+- trk_ratings
+
+### 17Lands Integration
+
+Successfully imported:
+
+- card-ratings-2026-11-18.csv
+
+Rows imported:
+
+- 336
+
+Pipeline validated:
+
+17Lands CSV
+→ Streamlit
+→ Supabase
+
+### Current Status
+
+Operational:
+
+- CSV Upload
+- CSV Parsing
+- Supabase Upload
+- 336 cards stored in trk_ratings
+
+### Next Session
+
+Objectives:
+
+1. Query data directly from trk_ratings
+2. Build Pool Analyzer
+3. Return Top Cards from Pool by GIH WR
+4. Create deck_events table
+5. Start storing pool/deck/result history
+
+### Long-Term Goal
+
+Build a Limited Advisor that:
+
+- evaluates pools
+- explains card choices
+- identifies patterns
+- compares player decisions with Draftsim
+- learns from trophy decks
+
