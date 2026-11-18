@@ -33,7 +33,7 @@ if st.button("Analyze"):
 
         total_cards += qty
 
-        card_type = "Unknown"
+        card_type = "Not Found"
 
         try:
 
@@ -43,7 +43,8 @@ if st.button("Analyze"):
             )
 
             response = requests.get(url)
-
+st.write(f"Searching: {name}")
+st.write(f"Status: {response.status_code}")
             if response.status_code == 200:
 
                 data = response.json()
