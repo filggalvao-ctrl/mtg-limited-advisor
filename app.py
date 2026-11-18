@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 
 st.title("MTG Limited Advisor")
 
@@ -9,9 +10,10 @@ pool_text = st.text_area(
 
 if st.button("Analyze"):
 
-    lines = pool_text.strip().split("\n")
-
     cards = []
+    total_cards = 0
+
+    lines = pool_text.strip().split("\n")
 
     for line in lines:
 
@@ -20,13 +22,29 @@ if st.button("Analyze"):
         if not line:
             continue
 
-        cards.append(line)
+        parts = line.split(" ", 1)
+
+        if len(parts) != 2:
+            continue
+
+        qty = int(parts[0])
+        name = parts[1]
+
+        total_cards += qty
+
+        cards.append({
+            "Quantity": qty,
+            "Card": name
+        })
+
+    df = pd.DataFrame(cards)
 
     st.subheader("Pool Summary")
 
-    st.write(f"Cards detected: {len(cards)}")
+    st.write(f"Unique cards: {len(cards)}")
 
-    st.subheader("Cards")
+    st.write(f"Total cards: {total_cards}")
 
-    for card in cards:
-        st.write(card)
+    st.subheader("Parsed Cards")
+
+    st.dataframe(df)
