@@ -16,118 +16,147 @@ pool_text = st.text_area(
 
 if st.button("Analyze Pool"):
 
-    url = st.secrets["SUPABASE_URL"]
-    key = st.secrets["SUPABASE_KEY"]
-
     supabase = create_client(
-        url,
-        key
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_KEY"]
     )
 
-    rows = []
+    cards = []
 
-    lines = pool_text.split("\n")
+    artifact_count = 0
+    legendary_count = 0
+    creature_count = 0
 
-    for line in lines:
+    for line in pool_text.split("\n"):
 
         line = line.strip()
 
         if not line:
             continue
 
-        parts = line.split(
-            " ",
-            1
-        )
+        parts = line.split(" ", 1)
 
         if len(parts) != 2:
             continue
 
+        qty = int(parts[0])
         card_name = parts[1]
 
+        rating = (
+            supabase
+            .table("trk_ratings")
+            .select("*")
+            .eq("card_name", card_name)
+            .execute()
+        )
+
+        metadata = (
+            supabase
+            .table("card_metadata")
+            .select("*")
+            .eq("card_name", card_name)
+            .execute()
+        )
+
+        r = rating.data[0] if rating.data else {}
+        m = metadata.data[0] if metadata.data else {}
+
+        is_artifact = bool(
+            m.get("is_artifact", False)
+        )
+
+        is_legendary = bool(
+            m.get("is_legendary", False)
+        )
+
+        is_creature = bool(
+            m.get("is_creature", False)
+        )
+
+        if is_artifact:
+            artifact_count += qty
+
+        if is_legendary:
+            legendary_count += qty
+
+        if is_creature:
+            creature_count += qty
+
+        gih = r.get("gih_wr")
+
         try:
-
-            rating_result = (
-                supabase
-                .table("trk_ratings")
-                .select("*")
-                .eq(
-                    "card_name",
-                    card_name
-                )
-                .execute()
+            gih_numeric = float(
+                str(gih).replace("%", "")
             )
+        except:
+            gih_numeric = 0
 
-            meta_result = (
-                supabase
-                .table("card_metadata")
-                .select("*")
-                .eq(
-                    "card_name",
-                    card_name
-                )
-                .execute()
-            )
+        cards.append({
 
-            rating = (
-                rating_result.data[0]
-                if rating_result.data
-                else {}
-            )
+            "Quantity": qty,
 
-            meta = (
-                meta_result.data[0]
-                if meta_result.data
-                else {}
-            )
+            "Card": card_name,
 
-            rows.append({
+            "GIH WR":
+                gih,
 
-                "Card":
-                    card_name,
+            "GIH Numeric":
+                gih_numeric,
 
-                "GIH WR":
-                    rating.get(
-                        "gih_wr",
-                        ""
-                    ),
+            "Colors":
+                m.get(
+                    "colors",
+                    ""
+                ),
 
-                "Type":
-                    meta.get(
-                        "type_line",
-                        ""
-                    ),
+            "Type":
+                m.get(
+                    "type_line",
+                    ""
+                ),
 
-                "Colors":
-                    meta.get(
-                        "colors",
-                        ""
-                    ),
+            "Artifact":
+                is_artifact,
 
-                "Artifact":
-                    meta.get(
-                        "is_artifact",
-                        False
-                    ),
+            "Legendary":
+                is_legendary,
 
-                "Legendary":
-                    meta.get(
-                        "is_legendary",
-                        False
-                    )
+            "Creature":
+                is_creature
+        })
 
-            })
+    df = pd.DataFrame(cards)
 
-        except Exception as e:
-
-            st.error(
-                f"{card_name}: {e}"
-            )
-
-    df = pd.DataFrame(rows)
-
-    st.subheader(
-        "Pool Analysis"
+    df = df.sort_values(
+        by="GIH Numeric",
+        ascending=False
     )
 
-    st.dataframe(df)
+    st.subheader("Pool Summary")
+
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric(
+        "Artifacts",
+        artifact_count
+    )
+
+    col2.metric(
+        "Legendaries",
+        legendary_count
+    )
+
+    col3.metric(
+        "Creatures",
+        creature_count
+    )
+
+    st.subheader(
+        "Best Cards By GIH WR"
+    )
+
+    st.dataframe(
+        df.drop(
+            columns=["GIH Numeric"]
+        )
+    )
