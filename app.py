@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import requests
 
 st.title("MTG Limited Advisor")
 
@@ -32,9 +33,33 @@ if st.button("Analyze"):
 
         total_cards += qty
 
+        card_type = "Unknown"
+
+        try:
+
+            url = (
+                "https://api.scryfall.com/cards/named"
+                f"?exact={name}"
+            )
+
+            response = requests.get(url)
+
+            if response.status_code == 200:
+
+                data = response.json()
+
+                card_type = data.get(
+                    "type_line",
+                    "Unknown"
+                )
+
+        except:
+            pass
+
         cards.append({
             "Quantity": qty,
-            "Card": name
+            "Card": name,
+            "Type": card_type
         })
 
     df = pd.DataFrame(cards)
@@ -42,7 +67,6 @@ if st.button("Analyze"):
     st.subheader("Pool Summary")
 
     st.write(f"Unique cards: {len(cards)}")
-
     st.write(f"Total cards: {total_cards}")
 
     st.subheader("Parsed Cards")
