@@ -1,59 +1,29 @@
 import streamlit as st
 import requests
-import pandas as pd
+import json
 
 st.title("MTG Limited Advisor")
 
-st.subheader("TRK Set Import")
-
-if st.button("Load Star Trek Set"):
-
-    all_cards = []
+if st.button("Test Scryfall"):
 
     url = "https://api.scryfall.com/cards/search?q=set%3Atrk"
 
-    progress = st.empty()
+    response = requests.get(
+        url,
+        headers={
+            "User-Agent": "mtg-limited-advisor"
+        }
+    )
 
-    while url:
+    st.write("Status Code:", response.status_code)
 
-        progress.write(f"Loading: {url}")
-
-        response = requests.get(url)
-
+    try:
         data = response.json()
 
-        for card in data["data"]:
+        st.subheader("JSON Response")
 
-            all_cards.append({
-                "name": card.get("name"),
-                "mana_cost": card.get("mana_cost"),
-                "mana_value": card.get("cmc"),
-                "colors": ",".join(card.get("colors", [])),
-                "type_line": card.get("type_line"),
-                "rarity": card.get("rarity"),
-                "power": card.get("power"),
-                "toughness": card.get("toughness"),
-                "oracle_text": card.get("oracle_text")
-            })
+        st.json(data)
 
-        if data.get("has_more"):
-            url = data.get("next_page")
-        else:
-            url = None
+    except Exception as e:
 
-    df = pd.DataFrame(all_cards)
-
-    st.success(
-        f"Loaded {len(df)} cards from Star Trek Set"
-    )
-
-    st.dataframe(df.head(20))
-
-    csv = df.to_csv(index=False)
-
-    st.download_button(
-        "Download TRK CSV",
-        csv,
-        "TRK_cards.csv",
-        "text/csv"
-    )
+        st.error(str(e))
