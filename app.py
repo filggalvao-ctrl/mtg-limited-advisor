@@ -67,4 +67,73 @@ if uploaded_file:
         clean_df = df[columns_to_keep]
 
         st.success(
-            
+            f"Loaded {len(clean_df)} cards"
+        )
+
+        st.dataframe(
+            clean_df.head(10)
+        )
+
+        if st.button("Upload to Supabase"):
+
+            url = st.secrets["SUPABASE_URL"]
+            key = st.secrets["SUPABASE_KEY"]
+
+            supabase = create_client(
+                url,
+                key
+            )
+
+            clean_df["snapshot_date"] = "2026-11-18"
+
+            # Converter NaN para None
+            clean_df = clean_df.where(
+                pd.notnull(clean_df),
+                None
+            )
+
+            records = clean_df.to_dict(
+                orient="records"
+            )
+
+            batch_size = 50
+
+            uploaded = 0
+
+            for i in range(
+                0,
+                len(records),
+                batch_size
+            ):
+
+                batch = records[
+                    i:i + batch_size
+                ]
+
+                try:
+
+                    supabase.table(
+                        "trk_ratings"
+                    ).insert(
+                        batch
+                    ).execute()
+
+                    uploaded += len(batch)
+
+                except Exception as e:
+
+                    st.error(
+                        f"Upload failed: {e}"
+                    )
+
+                    st.stop()
+
+            st.success(
+                f"Uploaded {uploaded} cards to Supabase"
+            )
+
+    except Exception as e:
+
+        st.error(
+            f"CSV Error: {e}"
+        )
