@@ -28,23 +28,29 @@ if st.button("Analyze"):
         if len(parts) != 2:
             continue
 
-        qty = int(parts[0])
+        try:
+            qty = int(parts[0])
+        except:
+            continue
+
         name = parts[1]
 
         total_cards += qty
 
+        url = (
+            "https://api.scryfall.com/cards/named"
+            f"?exact={name}"
+        )
+
         card_type = "Not Found"
+        status_code = "N/A"
 
         try:
 
-            url = (
-                "https://api.scryfall.com/cards/named"
-                f"?exact={name}"
-            )
-
             response = requests.get(url)
-st.write(f"Searching: {name}")
-st.write(f"Status: {response.status_code}")
+
+            status_code = response.status_code
+
             if response.status_code == 200:
 
                 data = response.json()
@@ -54,13 +60,15 @@ st.write(f"Status: {response.status_code}")
                     "Unknown"
                 )
 
-        except:
-            pass
+        except Exception as e:
+
+            card_type = f"ERROR: {e}"
 
         cards.append({
             "Quantity": qty,
             "Card": name,
-            "Type": card_type
+            "Type": card_type,
+            "Status": status_code
         })
 
     df = pd.DataFrame(cards)
