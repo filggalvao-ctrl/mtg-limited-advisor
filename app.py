@@ -1,83 +1,59 @@
 import streamlit as st
-import pandas as pd
 import requests
+import pandas as pd
 
 st.title("MTG Limited Advisor")
 
-pool_text = st.text_area(
-    "Paste Pool Here",
-    height=400
-)
+st.subheader("TRK Set Import")
 
-if st.button("Analyze"):
+if st.button("Load Star Trek Set"):
 
-    cards = []
-    total_cards = 0
+    all_cards = []
 
-    lines = pool_text.strip().split("\n")
+    url = "https://api.scryfall.com/cards/search?q=set%3Atrk"
 
-    for line in lines:
+    progress = st.empty()
 
-        line = line.strip()
+    while url:
 
-        if not line:
-            continue
+        progress.write(f"Loading: {url}")
 
-        parts = line.split(" ", 1)
+        response = requests.get(url)
 
-        if len(parts) != 2:
-            continue
+        data = response.json()
 
-        try:
-            qty = int(parts[0])
-        except:
-            continue
+        for card in data["data"]:
 
-        name = parts[1]
+            all_cards.append({
+                "name": card.get("name"),
+                "mana_cost": card.get("mana_cost"),
+                "mana_value": card.get("cmc"),
+                "colors": ",".join(card.get("colors", [])),
+                "type_line": card.get("type_line"),
+                "rarity": card.get("rarity"),
+                "power": card.get("power"),
+                "toughness": card.get("toughness"),
+                "oracle_text": card.get("oracle_text")
+            })
 
-        total_cards += qty
+        if data.get("has_more"):
+            url = data.get("next_page")
+        else:
+            url = None
 
-        url = (
-            "https://api.scryfall.com/cards/named"
-            f"?exact={name}"
-        )
+    df = pd.DataFrame(all_cards)
 
-        card_type = "Not Found"
-        status_code = "N/A"
+    st.success(
+        f"Loaded {len(df)} cards from Star Trek Set"
+    )
 
-        try:
+    st.dataframe(df.head(20))
 
-            response = requests.get(url)
+    csv = df.to_csv(index=False)
 
-            status_code = response.status_code
-
-            if response.status_code == 200:
-
-                data = response.json()
-
-                card_type = data.get(
-                    "type_line",
-                    "Unknown"
-                )
-
-        except Exception as e:
-
-            card_type = f"ERROR: {e}"
-
-        cards.append({
-            "Quantity": qty,
-            "Card": name,
-            "Type": card_type,
-            "Status": status_code
-        })
-
-    df = pd.DataFrame(cards)
-
-    st.subheader("Pool Summary")
-
-    st.write(f"Unique cards: {len(cards)}")
-    st.write(f"Total cards: {total_cards}")
-
-    st.subheader("Parsed Cards")
-
-    st.dataframe(df)
+    st.download_button(
+        "Download TRK CSV",
+        csv,
+        "TRK_cards.csv",
+        "text/csv"
+    )
