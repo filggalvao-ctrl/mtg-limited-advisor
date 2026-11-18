@@ -70,6 +70,8 @@ if uploaded_file:
             f"Loaded {len(clean_df)} cards"
         )
 
+        st.subheader("Preview")
+
         st.dataframe(
             clean_df.head(10)
         )
@@ -86,19 +88,29 @@ if uploaded_file:
 
             clean_df["snapshot_date"] = "2026-11-18"
 
-            # Converter NaN para None
+            # converter tudo para texto/objeto
+            clean_df = clean_df.astype(object)
+
+            # substituir NaN por None
             clean_df = clean_df.where(
                 pd.notnull(clean_df),
                 None
+            )
+
+            st.subheader("Missing Values Check")
+
+            missing = clean_df.isna().sum()
+
+            st.write(
+                missing[missing > 0]
             )
 
             records = clean_df.to_dict(
                 orient="records"
             )
 
-            batch_size = 50
-
             uploaded = 0
+            batch_size = 25
 
             for i in range(
                 0,
@@ -126,14 +138,22 @@ if uploaded_file:
                         f"Upload failed: {e}"
                     )
 
+                    st.write(
+                        "First record of failing batch:"
+                    )
+
+                    st.write(
+                        batch[0]
+                    )
+
                     st.stop()
 
             st.success(
-                f"Uploaded {uploaded} cards to Supabase"
+                f"Successfully uploaded {uploaded} records"
             )
 
     except Exception as e:
 
         st.error(
-            f"CSV Error: {e}"
+            f"CSV Parsing Error: {e}"
         )
