@@ -8,5 +8,25 @@ pool_text = st.text_area(
 )
 
 if st.button("Analyze"):
-    st.write("Pool received")
-    st.code(pool_text)
+
+    lines = pool_text.strip().split("\n")
+
+    cards = []
+
+    for line in lines:
+
+        line = line.strip()
+
+        if not line:
+            continue
+
+        cards.append(line)
+
+    st.subheader("Pool Summary")
+
+    st.write(f"Cards detected: {len(cards)}")
+
+    st.subheader("Cards")
+
+    for card in cards:
+        st.write(card)
