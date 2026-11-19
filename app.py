@@ -4,7 +4,8 @@ from supabase import create_client
 
 st.set_page_config(
     page_title="MTG Limited Advisor",
-    page_icon="🧙"
+    page_icon="🧙",
+    layout="wide"
 )
 
 st.title("MTG Limited Advisor")
@@ -14,6 +15,28 @@ pool_text = st.text_area(
     height=400
 )
 
+def get_tier(gih):
+
+    try:
+        v = float(str(gih).replace("%", ""))
+
+        if v >= 60:
+            return "S"
+
+        if v >= 58:
+            return "A"
+
+        if v >= 55:
+            return "B"
+
+        if v >= 52:
+            return "C"
+
+        return "D"
+
+    except:
+        return "D"
+
 if st.button("Analyze Pool"):
 
     supabase = create_client(
@@ -21,13 +44,9 @@ if st.button("Analyze Pool"):
         st.secrets["SUPABASE_KEY"]
     )
 
-    cards = []
+    pool_cards = []
 
-    artifact_count = 0
-    legendary_count = 0
-    creature_count = 0
-
-    color_data = {
+    color_summary = {
         "W": [],
         "U": [],
         "B": [],
@@ -50,7 +69,7 @@ if st.button("Analyze Pool"):
         qty = int(parts[0])
         card_name = parts[1]
 
-        rating = (
+        rating_result = (
             supabase
             .table("trk_ratings")
             .select("*")
@@ -58,7 +77,7 @@ if st.button("Analyze Pool"):
             .execute()
         )
 
-        metadata = (
+        meta_result = (
             supabase
             .table("card_metadata")
             .select("*")
@@ -67,18 +86,21 @@ if st.button("Analyze Pool"):
         )
 
         r = (
-            rating.data[0]
-            if rating.data
+            rating_result.data[0]
+            if rating_result.data
             else {}
         )
 
         m = (
-            metadata.data[0]
-            if metadata.data
+            meta_result.data[0]
+            if meta_result.data
             else {}
         )
 
-        gih = r.get("gih_wr")
+        gih = r.get(
+            "gih_wr",
+            0
+        )
 
         try:
             gih_numeric = float(
@@ -92,225 +114,91 @@ if st.button("Analyze Pool"):
             ""
         )
 
+        tier = get_tier(gih)
+
+        card_entry = {
+            "Card": card_name,
+            "GIH": gih_numeric,
+            "Tier": tier
+        }
+
         if colors:
 
-            split_colors = colors.split(",")
+            for c in colors.split(","):
 
-            for c in split_colors:
+                if c in color_summary:
 
-                if c in color_data:
-
-                    # adicionar apenas uma vez por carta
-                    color_data[c].append(
-                        gih_numeric
+                    color_summary[c].append(
+                        card_entry
                     )
 
-        is_artifact = bool(
-            m.get("is_artifact", False)
-        )
-
-        is_legendary = bool(
-            m.get("is_legendary", False)
-        )
-
-        is_creature = bool(
-            m.get("is_creature", False)
-        )
-
-        if is_artifact:
-            artifact_count += qty
-
-        if is_legendary:
-            legendary_count += qty
-
-        if is_creature:
-            creature_count += qty
-
-        bomb = (
-            gih_numeric >= 60
-            and not bool(
-                m.get("is_land", False)
-            )
-        )
-
-        premium = (
-            gih_numeric >= 58
-            and gih_numeric < 60
-        )
-
-        cards.append({
-
-            "Quantity": qty,
-
+        pool_cards.append({
             "Card": card_name,
-
-            "GIH WR": gih,
-
-            "GIH Numeric": gih_numeric,
-
-            "Colors": colors,
-
-            "Type": m.get(
-                "type_line",
-                ""
-            ),
-
-            "Artifact": is_artifact,
-
-            "Legendary": is_legendary,
-
-            "Creature": is_creature,
-
-            "Bomb": bomb,
-
-            "Premium": premium
+            "GIH": gih_numeric,
+            "Tier": tier,
+            "Colors": colors
         })
 
-    df = pd.DataFrame(cards)
+    st.header("Color Power Map")
 
-    df = df.sort_values(
-        by="GIH Numeric",
-        ascending=False
+    summary_rows = []
+
+    for color, cards in color_summary.items():
+
+        s = len([x for x in cards if x["Tier"] == "S"])
+        a = len([x for x in cards if x["Tier"] == "A"])
+        b = len([x for x in cards if x["Tier"] == "B"])
+        c = len([x for x in cards if x["Tier"] == "C"])
+        d = len([x for x in cards if x["Tier"] == "D"])
+
+        summary_rows.append({
+            "Color": color,
+            "Cards": len(cards),
+            "S": s,
+            "A": a,
+            "B": b,
+            "C": c,
+            "D": d
+        })
+
+    summary_df = pd.DataFrame(
+        summary_rows
     )
 
-    st.subheader("Pool Summary")
-
-    c1, c2, c3 = st.columns(3)
-
-    c1.metric(
-        "Artifacts",
-        artifact_count
+    st.dataframe(
+        summary_df,
+        hide_index=True
     )
 
-    c2.metric(
-        "Legendaries",
-        legendary_count
-    )
+    st.header("Best Cards By Color")
 
-    c3.metric(
-        "Creatures",
-        creature_count
-    )
+    color_names = {
+        "W": "White",
+        "U": "Blue",
+        "B": "Black",
+        "R": "Red",
+        "G": "Green"
+    }
 
-    # -------------------
-    # COLOR ANALYSIS
-    # -------------------
+    for color, cards in color_summary.items():
 
-    color_rows = []
-
-    for color, values in color_data.items():
-
-        if len(values) == 0:
+        if len(cards) == 0:
             continue
 
-        avg_gih = sum(values) / len(values)
-
-        premium_count = len(
-            [v for v in values if v >= 58]
+        st.subheader(
+            color_names[color]
         )
 
-        bomb_count = len(
-            [v for v in values if v >= 60]
+        color_df = pd.DataFrame(cards)
+
+        color_df = color_df.sort_values(
+            by="GIH",
+            ascending=False
         )
-
-        advisor_score = (
-            avg_gih
-            + premium_count * 2
-            + bomb_count * 5
-        )
-
-        color_rows.append({
-
-            "Color": color,
-
-            "Average GIH":
-                round(
-                    avg_gih,
-                    2
-                ),
-
-            "Premium Cards":
-                premium_count,
-
-            "Bombs":
-                bomb_count,
-
-            "Advisor Score":
-                round(
-                    advisor_score,
-                    2
-                )
-        })
-
-    color_df = pd.DataFrame(
-        color_rows
-    )
-
-    color_df = color_df.sort_values(
-        by="Advisor Score",
-        ascending=False
-    )
-
-    st.subheader(
-        "Color Quality Analysis"
-    )
-
-    st.dataframe(
-        color_df,
-        hide_index=True
-    )
-
-    st.subheader(
-        "Potential Bombs"
-    )
-
-    bombs = df[
-        df["Bomb"] == True
-    ][[
-        "Card",
-        "GIH WR",
-        "Colors"
-    ]]
-
-    if len(bombs):
 
         st.dataframe(
-            bombs,
+            color_df,
             hide_index=True
         )
-
-    else:
-
-        st.write(
-            "No bombs detected."
-        )
-
-    st.subheader(
-        "Premium Cards"
-    )
-
-    premium_cards = df[
-        df["Premium"] == True
-    ][[
-        "Card",
-        "GIH WR",
-        "Colors"
-    ]]
-
-    st.dataframe(
-        premium_cards,
-        hide_index=True
-    )
-
-    st.subheader(
-        "Best Cards By GIH WR"
-    )
-
-    st.dataframe(
-        df.drop(
-            columns=[
-                "GIH Numeric"
-            ]
-        ),
         hide_index=True
     )
