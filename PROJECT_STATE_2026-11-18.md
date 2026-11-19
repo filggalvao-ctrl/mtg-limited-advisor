@@ -394,5 +394,406 @@ Second question:
 "Design the storage model for Pool + Player Deck + Draftsim Deck + Result."
 
 Do not start by creating more metadata.
+
+
+---
+
+# PROJECT STATE UPDATE - Limited Advisor Design
+
+Date:
+2026-11-19
+
+---
+
+# Critical Discovery
+
+The project is NOT a deck builder.
+
+The project is a Deck Auditor.
+
+Input:
+
+- Pool
+- Candidate Deck
+
+Output:
+
+- Structural warnings
+- Missing packages
+- Alternative build paths
+- Tradeoff analysis
+
+The advisor should never replace the player.
+
+It should challenge assumptions.
+
+---
+
+# Current Advisor Maturity
+
+Already Working:
+
+- card_metadata
+- trk_ratings
+- pool parsing
+- card lookup
+- GIH WR lookup
+- color detection
+
+Not Yet Working:
+
+- package identification
+- role identification
+- structural deck analysis
+- trophy knowledge
+
+---
+
+# Fundamental Construction Rules
+
+These must become first-class rules inside the advisor.
+
+## Rule 1
+
+40 cards
+
+Default:
+
+23 spells
+17 lands
+
+Exceptions possible.
+
+---
+
+## Rule 2
+
+Creature count
+
+Typical range:
+
+14-18 creatures
+
+Alert outside range.
+
+---
+
+## Rule 3
+
+Raw curve is misleading.
+
+Need:
+
+Functional Curve
+
+Example:
+
+De-evolve
+
+Mana Cost:
+2
+
+Expected Play Turn:
+4-6
+
+Therefore:
+
+Should not be counted as a true 2-drop.
+
+---
+
+## Rule 4
+
+Evaluate:
+
+Board Development Curve
+
+Not:
+
+Mana Curve
+
+Example:
+
+Tal Shiar Operative
+
+TRUE 2-drop
+
+De-evolve
+
+FALSE 2-drop
+
+---
+
+## Rule 5
+
+When replacing cards:
+
+Role must be preserved.
+
+Bad example:
+
+Threat → Removal
+
+Good example:
+
+Removal → Removal
+
+Threat → Threat
+
+or
+
+Threat lost compensated by large increase elsewhere.
+
+---
+
+# Major Discovery
+
+Card Rating != Deck Rating
+
+Card Strength != Deck Strength
+
+Examples:
+
+The Traveler
+Borg Cube
+Captain Benjamin Sisko
+Seven of Nine
+Tal Shiar Operative
+
+---
+
+# New Advisor Model
+
+Before discussing cards:
+
+Step 1
+
+Validate Structure
+
+- Lands
+- Creatures
+- Functional Curve
+
+Step 2
+
+Identify Main Color Packages
+
+Example:
+
+Green Value Package
+
+Cards:
+
+- Cleveland Booker
+- Vash
+- Species 8472
+- Temporal Conqueror
+
+Step 3
+
+Identify Candidate Splashes
+
+Example:
+
+Blue Package:
+
+- Marooned x3
+- Constable Odo
+- Humpback Whales
+
+Red Package:
+
+- Gowron
+- Planetary Bombardment
+
+White Package:
+
+- Captain Benjamin Sisko
+- Ghost of Illyria
+- Primary Unimatrix Adjunct
+
+---
+
+# Package Evaluation Rule
+
+Do NOT evaluate:
+
+single cards.
+
+Evaluate:
+
+packages.
+
+Question:
+
+"This splash gives me what?"
+
+Example:
+
+Red
+
++ Gowron
++ Planetary Bombardment
+
+Blue
+
++ Marooned x3
++ Constable Odo
++ Humpback Whales
+
+White
+
++ Sisko
++ Ghost
++ Adjunct
+
+---
+
+# Requirements Concept
+
+Cards do not only have strength.
+
+Cards have requirements.
+
+Examples:
+
+Captain Benjamin Sisko
+
+Requirements:
+
+- dilemmas
+- officers
+- ideally WUBRG activation
+
+---
+
+Seven of Nine
+
+Requirements:
+
+- dilemma support
+
+---
+
+Primary Unimatrix Adjunct
+
+Requirements:
+
+- artifact creatures
+
+---
+
+Ghost of Illyria
+
+Requirements:
+
+- valuable ETB targets
+
+---
+
+Advisor must evaluate:
+
+Requirements satisfied?
+
+YES / NO
+
+before recommending card.
+
+---
+
+# Splash Evaluation
+
+Splashability is NOT mana cost.
+
+Splashability is:
+
+Mana Cost
++
+Expected Play Turn
++
+Role
+
+Example:
+
+The Traveler
+
+Cost:
+GU
+
+Needs to be played early.
+
+Poor splash candidate.
+
+---
+
+Borg Cube
+
+Cost:
+WB + 7 mana
+
+Comes down very late.
+
+Good splash candidate.
+
+---
+
+Removal
+
+Single pip removal
+
+Excellent splash candidate.
+
+---
+
+# Future Database Direction
+
+Current Tables:
+
+- card_metadata
+- trk_ratings
+- pools
+- pool_cards
+- deck_events
+
+No additional schema should be created before reviewing real examples.
+
+---
+
+# Immediate Next Goal
+
+Before creating new tables:
+
+Design storage model for:
+
+Pool
+Player Deck
+Draftsim Deck
+Result
+
+Need one model capable of:
+
+- comparing paths
+- identifying package inclusion
+- tracking results
+
+---
+
+# Ultimate Advisor Question
+
+Do not ask:
+
+"What is the strongest card?"
+
+Do not ask:
+
+"What is the strongest color?"
+
+Ask:
+
+"What problem is the deck trying to solve?"
+
+and
+
+"What is the cost of this decision?"
 Do not start by creating machine learning.
 Do not start by creating tags.
