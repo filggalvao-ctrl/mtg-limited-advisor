@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from supabase import create_client
+from itertools import combinations
 
 st.set_page_config(
     page_title="MTG Limited Advisor",
@@ -74,6 +75,16 @@ if st.button("Analyze Pool"):
         "G": [],
         "ARTIFACT": [],
         "MULTI": []
+    }
+
+    pair_rewards = {}
+
+    mono_strength = {
+        "W": 0,
+        "U": 0,
+        "B": 0,
+        "R": 0,
+        "G": 0
     }
 
     for line in pool_text.split("\n"):
@@ -167,10 +178,6 @@ if st.button("Analyze Pool"):
             "Colors": colors
         }
 
-        # ----------------------
-        # Classification
-        # ----------------------
-
         if not colors:
 
             color_cards[
@@ -187,6 +194,7 @@ if st.button("Analyze Pool"):
                 if c.strip()
             ]
 
+            # Multicolor
             if len(split_colors) > 1:
 
                 color_cards[
@@ -195,17 +203,50 @@ if st.button("Analyze Pool"):
                     entry
                 )
 
-            else:
+                pair_key = ",".join(
+                    sorted(
+                        split_colors
+                    )
+                )
 
-                single_color = split_colors[0]
+                if pair_key not in pair_rewards:
 
-                if single_color in color_cards:
+                    pair_rewards[
+                        pair_key
+                    ] = []
+
+                pair_rewards[
+                    pair_key
+                ].append(
+                    entry
+                )
+
+            # Monocolor
+            elif len(split_colors) == 1:
+
+                color = split_colors[0]
+
+                if color in color_cards:
 
                     color_cards[
-                        single_color
+                        color
                     ].append(
                         entry
                     )
+
+                    if (
+                        gih_num
+                        is not None
+                        and tier in [
+                            "S",
+                            "A",
+                            "B"
+                        ]
+                    ):
+
+                        mono_strength[
+                            color
+                        ] += gih_num
 
     # --------------------------------
     # POOL POWER OVERVIEW
@@ -295,6 +336,102 @@ if st.button("Analyze Pool"):
     )
 
     # --------------------------------
+    # CANDIDATE COLOR PAIRS
+    # --------------------------------
+
+    st.header(
+        "Candidate Color Pairs"
+    )
+
+    pair_rows = []
+
+    for pair, cards in pair_rewards.items():
+
+        c1, c2 = pair.split(",")
+
+        reward_strength = 0
+
+        premiums = 0
+
+        for card in cards:
+
+            if (
+                card["GIH_Num"]
+                is not None
+                and card["Tier"] in [
+                    "S",
+                    "A",
+                    "B"
+                ]
+            ):
+
+                reward_strength += (
+                    card["GIH_Num"]
+                )
+
+                premiums += 1
+
+        total_score = (
+            mono_strength.get(
+                c1,
+                0
+            )
+            +
+            mono_strength.get(
+                c2,
+                0
+            )
+            +
+            reward_strength
+        )
+
+        pair_rows.append({
+
+            "Pair":
+                pair,
+
+            "Premiums":
+                premiums,
+
+            "Reward Strength":
+                round(
+                    reward_strength,
+                    1
+                ),
+
+            "Total Pair Score":
+                round(
+                    total_score,
+                    1
+                ),
+
+            "Key Cards":
+                ", ".join(
+                    [
+                        c["Card"]
+                        for c in cards
+                    ]
+                )
+        })
+
+    if pair_rows:
+
+        pair_df = pd.DataFrame(
+            pair_rows
+        )
+
+        pair_df = pair_df.sort_values(
+            by="Total Pair Score",
+            ascending=False
+        )
+
+        st.dataframe(
+            pair_df,
+            hide_index=True,
+            use_container_width=True
+        )
+
+    # --------------------------------
     # MULTICOLOR REWARDS
     # --------------------------------
 
@@ -302,49 +439,28 @@ if st.button("Analyze Pool"):
         "🌈 Multicolor Rewards"
     )
 
-    multi_cards = color_cards["MULTI"]
-
-    pair_data = {}
-
-    for card in multi_cards:
-
-        colors = card["Colors"]
-
-        if colors not in pair_data:
-
-            pair_data[colors] = {
-                "Premium": 0,
-                "Strength": 0,
-                "Cards": []
-            }
-
-        pair_data[
-            colors
-        ]["Cards"].append(
-            card["Card"]
-        )
-
-        if card["Tier"] in [
-            "S",
-            "A",
-            "B"
-        ]:
-
-            pair_data[
-                colors
-            ]["Premium"] += 1
-
-            if card["GIH_Num"] is not None:
-
-                pair_data[
-                    colors
-                ]["Strength"] += (
-                    card["GIH_Num"]
-                )
-
     reward_rows = []
 
-    for pair, data in pair_data.items():
+    for pair, cards in pair_rewards.items():
+
+        strength = 0
+
+        premiums = 0
+
+        for c in cards:
+
+            if (
+                c["Tier"]
+                in ["S", "A", "B"]
+            ):
+
+                premiums += 1
+
+                if c["GIH_Num"]:
+
+                    strength += c[
+                        "GIH_Num"
+                    ]
 
         reward_rows.append({
 
@@ -352,36 +468,37 @@ if st.button("Analyze Pool"):
                 pair,
 
             "Premiums":
-                data["Premium"],
+                premiums,
 
             "Premium Strength":
                 round(
-                    data["Strength"],
+                    strength,
                     1
                 ),
 
             "Best Cards":
                 ", ".join(
-                    data["Cards"]
+                    [
+                        c["Card"]
+                        for c in cards
+                    ]
                 )
         })
 
-    if reward_rows:
+    reward_df = pd.DataFrame(
+        reward_rows
+    )
 
-        reward_df = pd.DataFrame(
-            reward_rows
-        )
+    reward_df = reward_df.sort_values(
+        by="Premium Strength",
+        ascending=False
+    )
 
-        reward_df = reward_df.sort_values(
-            by="Premium Strength",
-            ascending=False
-        )
-
-        st.dataframe(
-            reward_df,
-            hide_index=True,
-            use_container_width=True
-        )
+    st.dataframe(
+        reward_df,
+        hide_index=True,
+        use_container_width=True
+    )
 
     # --------------------------------
     # DETAILED COLOR BREAKDOWN
