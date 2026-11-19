@@ -20,8 +20,11 @@ COLOR_NAMES = {
     "U": "🔵 Blue",
     "B": "⚫ Black",
     "R": "🔴 Red",
-    "G": "🟢 Green"
+    "G": "🟢 Green",
+    "ARTIFACT": "⚙️ Artifacts",
+    "MULTI": "🌈 Multicolor"
 }
+
 
 def get_tier(gih):
 
@@ -68,7 +71,9 @@ if st.button("Analyze Pool"):
         "U": [],
         "B": [],
         "R": [],
-        "G": []
+        "G": [],
+        "ARTIFACT": [],
+        "MULTI": []
     }
 
     for line in pool_text.split("\n"):
@@ -155,28 +160,48 @@ if st.button("Analyze Pool"):
         )
 
         entry = {
-
-            "Card":
-                card_name,
-
-            "GIH":
-                gih_display,
-
-            "Tier":
-                tier,
-
-            "GIH_Num":
-                gih_num
+            "Card": card_name,
+            "GIH": gih_display,
+            "Tier": tier,
+            "GIH_Num": gih_num
         }
 
-        if colors:
+        # ------------------------
+        # CLASSIFICATION
+        # ------------------------
 
-            for color in colors.split(","):
+        if not colors:
 
-                if color in color_cards:
+            color_cards[
+                "ARTIFACT"
+            ].append(
+                entry
+            )
+
+        else:
+
+            split_colors = [
+                c.strip()
+                for c in colors.split(",")
+                if c.strip()
+            ]
+
+            if len(split_colors) > 1:
+
+                color_cards[
+                    "MULTI"
+                ].append(
+                    entry
+                )
+
+            else:
+
+                single_color = split_colors[0]
+
+                if single_color in color_cards:
 
                     color_cards[
-                        color
+                        single_color
                     ].append(
                         entry
                     )
@@ -192,9 +217,7 @@ if st.button("Analyze Pool"):
         if len(cards) == 0:
             continue
 
-        cards_df = pd.DataFrame(
-            cards
-        )
+        cards_df = pd.DataFrame(cards)
 
         cards_df["GIH_Sort"] = cards_df[
             "GIH_Num"
@@ -273,10 +296,12 @@ if st.button("Analyze Pool"):
         "U",
         "B",
         "R",
-        "G"
+        "G",
+        "ARTIFACT",
+        "MULTI"
     ]
 
-    cols = st.columns(5)
+    cols = st.columns(7)
 
     for idx, color in enumerate(
         ordered_colors
