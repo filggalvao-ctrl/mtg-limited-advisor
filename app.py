@@ -15,10 +15,25 @@ pool_text = st.text_area(
     height=400
 )
 
+COLOR_NAMES = {
+    "W": "⚪ White",
+    "U": "🔵 Blue",
+    "B": "⚫ Black",
+    "R": "🔴 Red",
+    "G": "🟢 Green"
+}
+
+
 def get_tier(gih):
 
     try:
-        v = float(str(gih).replace("%", ""))
+
+        v = float(
+            str(gih).replace(
+                "%",
+                ""
+            )
+        )
 
         if v >= 60:
             return "S"
@@ -35,7 +50,25 @@ def get_tier(gih):
         return "D"
 
     except:
+
         return "D"
+
+
+def tier_score(tier):
+
+    scores = {
+        "S": 5,
+        "A": 3,
+        "B": 2,
+        "C": 1,
+        "D": 0
+    }
+
+    return scores.get(
+        tier,
+        0
+    )
+
 
 if st.button("Analyze Pool"):
 
@@ -44,9 +77,7 @@ if st.button("Analyze Pool"):
         st.secrets["SUPABASE_KEY"]
     )
 
-    pool_cards = []
-
-    color_summary = {
+    color_cards = {
         "W": [],
         "U": [],
         "B": [],
@@ -61,19 +92,24 @@ if st.button("Analyze Pool"):
         if not line:
             continue
 
-        parts = line.split(" ", 1)
+        parts = line.split(
+            " ",
+            1
+        )
 
         if len(parts) != 2:
             continue
 
-        qty = int(parts[0])
         card_name = parts[1]
 
         rating_result = (
             supabase
             .table("trk_ratings")
             .select("*")
-            .eq("card_name", card_name)
+            .eq(
+                "card_name",
+                card_name
+            )
             .execute()
         )
 
@@ -81,88 +117,151 @@ if st.button("Analyze Pool"):
             supabase
             .table("card_metadata")
             .select("*")
-            .eq("card_name", card_name)
+            .eq(
+                "card_name",
+                card_name
+            )
             .execute()
         )
 
-        r = (
+        rating = (
             rating_result.data[0]
             if rating_result.data
             else {}
         )
 
-        m = (
+        metadata = (
             meta_result.data[0]
             if meta_result.data
             else {}
         )
 
-        gih = r.get(
+        gih = rating.get(
             "gih_wr",
             0
         )
 
         try:
-            gih_numeric = float(
-                str(gih).replace("%", "")
-            )
-        except:
-            gih_numeric = 0
 
-        colors = m.get(
+            gih_num = float(
+                str(gih).replace(
+                    "%",
+                    ""
+                )
+            )
+
+        except:
+
+            gih_num = 0
+
+        tier = get_tier(
+            gih_num
+        )
+
+        colors = metadata.get(
             "colors",
             ""
         )
 
-        tier = get_tier(gih)
+        card_data = {
 
-        card_entry = {
-            "Card": card_name,
-            "GIH": gih_numeric,
-            "Tier": tier
+            "Card":
+                card_name,
+
+            "GIH":
+                gih_num,
+
+            "Tier":
+                tier
         }
 
         if colors:
 
-            for c in colors.split(","):
+            split_colors = colors.split(",")
 
-                if c in color_summary:
+            for color in split_colors:
 
-                    color_summary[c].append(
-                        card_entry
+                if color in color_cards:
+
+                    color_cards[
+                        color
+                    ].append(
+                        card_data
                     )
 
-        pool_cards.append({
-            "Card": card_name,
-            "GIH": gih_numeric,
-            "Tier": tier,
-            "Colors": colors
-        })
-
-    st.header("Color Power Map")
+    st.header(
+        "Pool Power Map"
+    )
 
     summary_rows = []
 
-    for color, cards in color_summary.items():
+    for color, cards in color_cards.items():
 
-        s = len([x for x in cards if x["Tier"] == "S"])
-        a = len([x for x in cards if x["Tier"] == "A"])
-        b = len([x for x in cards if x["Tier"] == "B"])
-        c = len([x for x in cards if x["Tier"] == "C"])
-        d = len([x for x in cards if x["Tier"] == "D"])
+        s = len(
+            [
+                c
+                for c in cards
+                if c["Tier"] == "S"
+            ]
+        )
+
+        a = len(
+            [
+                c
+                for c in cards
+                if c["Tier"] == "A"
+            ]
+        )
+
+        b = len(
+            [
+                c
+                for c in cards
+                if c["Tier"] == "B"
+            ]
+        )
+
+        power_score = sum(
+            tier_score(
+                c["Tier"]
+            )
+            for c in cards
+        )
+
+        premium_count = (
+            s + a + b
+        )
 
         summary_rows.append({
-            "Color": color,
-            "Cards": len(cards),
-            "S": s,
-            "A": a,
-            "B": b,
-            "C": c,
-            "D": d
+
+            "Color":
+                COLOR_NAMES[
+                    color
+                ],
+
+            "Premium":
+                premium_count,
+
+            "Power Score":
+                power_score,
+
+            "S":
+                s,
+
+            "A":
+                a,
+
+            "B":
+                b
         })
 
     summary_df = pd.DataFrame(
         summary_rows
+    )
+
+    summary_df = summary_df.sort_values(
+        by="Power Score",
+        ascending=False
     )
 
     st.dataframe(
@@ -170,33 +269,37 @@ if st.button("Analyze Pool"):
         hide_index=True
     )
 
-    st.header("Best Cards By Color")
+    st.header(
+        "Top Cards By Color"
+    )
 
-    color_names = {
-        "W": "White",
-        "U": "Blue",
-        "B": "Black",
-        "R": "Red",
-        "G": "Green"
-    }
-
-    for color, cards in color_summary.items():
+    for color, cards in color_cards.items():
 
         if len(cards) == 0:
             continue
 
-        st.subheader(
-            color_names[color]
+        color_df = pd.DataFrame(
+            cards
         )
-
-        color_df = pd.DataFrame(cards)
 
         color_df = color_df.sort_values(
             by="GIH",
             ascending=False
         )
 
+        color_df = color_df[
+            color_df["Tier"] != "D"
+        ]
+
+        if len(color_df) == 0:
+            continue
+
+        st.subheader(
+            COLOR_NAMES[color]
+        )
+
         st.dataframe(
             color_df,
-            hide_index=True
+            hide_index=True,
+            use_container_width=True
         )
