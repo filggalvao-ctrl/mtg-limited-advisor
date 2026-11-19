@@ -797,3 +797,14 @@ and
 "What is the cost of this decision?"
 Do not start by creating machine learning.
 Do not start by creating tags.
+
+
+The Advisor follows the same sequence as a human deckbuilder:
+
+1. Identify power.
+2. Identify playable colors.
+3. Identify packages.
+4. Validate structure.
+5. Audit deck.
+6. Evaluate splashes.
+7. Compare with historical data.
