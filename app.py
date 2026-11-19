@@ -22,7 +22,8 @@ COLOR_NAMES = {
     "B": "⚫ Black",
     "R": "🔴 Red",
     "G": "🟢 Green",
-    "ARTIFACT": "⚙️ Artifacts",
+    "COLORLESS": "⚙️ Colorless",
+    "LANDS": "🏞️ Lands",
     "MULTI": "🌈 Multicolor"
 }
 
@@ -73,7 +74,8 @@ if st.button("Analyze Pool"):
         "B": [],
         "R": [],
         "G": [],
-        "ARTIFACT": [],
+        "COLORLESS": [],
+        "LANDS": [],
         "MULTI": []
     }
 
@@ -180,11 +182,19 @@ if st.button("Analyze Pool"):
 
         if not colors:
 
-            color_cards[
-                "ARTIFACT"
-            ].append(
-                entry
-            )
+            if metadata.get("is_land"):
+                color_cards[
+                    "LANDS"
+                ].append(
+                    entry
+                )
+
+            else:
+                color_cards[
+                    "COLORLESS"
+                ].append(
+                    entry
+                )
 
         else:
 
@@ -202,24 +212,24 @@ if st.button("Analyze Pool"):
                 ].append(
                     entry
                 )
-
-                pair_key = ",".join(
-                    sorted(
-                        split_colors
+                if len(split_colors) == 2:
+                    pair_key = ",".join(
+                        sorted(
+                            split_colors
+                        )
                     )
-                )
-
-                if pair_key not in pair_rewards:
-
+    
+                    if pair_key not in pair_rewards:
+    
+                        pair_rewards[
+                            pair_key
+                        ] = []
+    
                     pair_rewards[
                         pair_key
-                    ] = []
-
-                pair_rewards[
-                    pair_key
-                ].append(
-                    entry
-                )
+                    ].append(
+                        entry
+                    )
 
             # Monocolor
             elif len(split_colors) == 1:
