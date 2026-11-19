@@ -53,22 +53,6 @@ def get_tier(gih):
         return "D"
 
 
-def premium_count(cards):
-
-    count = 0
-
-    for card in cards:
-
-        if card["Tier"] in [
-            "S",
-            "A",
-            "B"
-        ]:
-            count += 1
-
-    return count
-
-
 if st.button("Analyze Pool"):
 
     supabase = create_client(
@@ -197,27 +181,52 @@ if st.button("Analyze Pool"):
         if len(cards) == 0:
             continue
 
-        cards_sorted = sorted(
-            cards,
-            key=lambda x: x["GIH"],
-            reverse=True
+        cards_df = pd.DataFrame(
+            cards
         )
 
-        best_three = cards_sorted[:3]
+        cards_df = cards_df.sort_values(
+            by="GIH",
+            ascending=False
+        )
+
+        premium_df = cards_df[
+            cards_df["Tier"].isin(
+                ["S", "A", "B"]
+            )
+        ]
+
+        premium_count = len(
+            premium_df
+        )
+
+        premium_strength = round(
+            premium_df["GIH"].sum(),
+            1
+        )
+
+        best_three = cards_df.head(3)
 
         top_cards = " | ".join(
             [
-                f"{c['Card']} ({c['GIH']:.1f})"
-                for c in best_three
+                f"{row['Card']} ({row['GIH']:.1f})"
+                for _, row
+                in best_three.iterrows()
             ]
         )
 
         summary_rows.append({
+
             "Color":
-                COLOR_NAMES[color],
+                COLOR_NAMES[
+                    color
+                ],
 
             "Premium":
-                premium_count(cards),
+                premium_count,
+
+            "Premium Strength":
+                premium_strength,
 
             "Best Cards":
                 top_cards
@@ -228,7 +237,7 @@ if st.button("Analyze Pool"):
     )
 
     summary_df = summary_df.sort_values(
-        by="Premium",
+        by="Premium Strength",
         ascending=False
     )
 
@@ -242,8 +251,6 @@ if st.button("Analyze Pool"):
         "Detailed Color Breakdown"
     )
 
-    cols = st.columns(5)
-
     ordered_colors = [
         "W",
         "U",
@@ -251,6 +258,8 @@ if st.button("Analyze Pool"):
         "R",
         "G"
     ]
+
+    cols = st.columns(5)
 
     for idx, color in enumerate(
         ordered_colors
@@ -274,6 +283,14 @@ if st.button("Analyze Pool"):
             cards_df["Tier"] != "D"
         ]
 
+        premium_count = len(
+            cards_df[
+                cards_df["Tier"].isin(
+                    ["S", "A", "B"]
+                )
+            ]
+        )
+
         with cols[idx]:
 
             st.subheader(
@@ -282,9 +299,7 @@ if st.button("Analyze Pool"):
 
             st.metric(
                 "Premium",
-                premium_count(
-                    cards
-                )
+                premium_count
             )
 
             st.dataframe(
