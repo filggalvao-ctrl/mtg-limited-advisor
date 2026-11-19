@@ -200,5 +200,3 @@ if st.button("Analyze Pool"):
             color_df,
             hide_index=True
         )
-        hide_index=True
-    )
