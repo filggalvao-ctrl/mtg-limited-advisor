@@ -335,102 +335,100 @@ if st.button("Analyze Pool"):
         use_container_width=True
     )
 
-    # --------------------------------
-    # CANDIDATE COLOR PAIRS
-    # --------------------------------
+  # --------------------------------
+# CANDIDATE COLOR PAIRS
+# --------------------------------
 
-    st.header(
-        "Candidate Color Pairs"
+st.header(
+    "Candidate Color Pairs"
+)
+
+pair_rows = []
+
+for pair, cards in pair_rewards.items():
+
+    colors = [
+        c.strip()
+        for c in pair.split(",")
+        if c.strip()
+    ]
+
+    reward_strength = 0
+
+    premiums = 0
+
+    for card in cards:
+
+        if (
+            card["GIH_Num"]
+            is not None
+            and card["Tier"] in [
+                "S",
+                "A",
+                "B"
+            ]
+        ):
+
+            reward_strength += (
+                card["GIH_Num"]
+            )
+
+            premiums += 1
+
+    total_score = reward_strength
+
+    for color in colors:
+
+        total_score += mono_strength.get(
+            color,
+            0
+        )
+
+    pair_rows.append({
+
+        "Pair":
+            pair,
+
+        "Premiums":
+            premiums,
+
+        "Reward Strength":
+            round(
+                reward_strength,
+                1
+            ),
+
+        "Total Pair Score":
+            round(
+                total_score,
+                1
+            ),
+
+        "Key Cards":
+            ", ".join(
+                [
+                    c["Card"]
+                    for c in cards
+                ]
+            )
+    })
+
+if pair_rows:
+
+    pair_df = pd.DataFrame(
+        pair_rows
     )
 
-    pair_rows = []
+    pair_df = pair_df.sort_values(
+        by="Total Pair Score",
+        ascending=False
+    )
 
-    for pair, cards in pair_rewards.items():
-
-        c1, c2 = pair.split(",")
-
-        reward_strength = 0
-
-        premiums = 0
-
-        for card in cards:
-
-            if (
-                card["GIH_Num"]
-                is not None
-                and card["Tier"] in [
-                    "S",
-                    "A",
-                    "B"
-                ]
-            ):
-
-                reward_strength += (
-                    card["GIH_Num"]
-                )
-
-                premiums += 1
-
-        total_score = (
-            mono_strength.get(
-                c1,
-                0
-            )
-            +
-            mono_strength.get(
-                c2,
-                0
-            )
-            +
-            reward_strength
-        )
-
-        pair_rows.append({
-
-            "Pair":
-                pair,
-
-            "Premiums":
-                premiums,
-
-            "Reward Strength":
-                round(
-                    reward_strength,
-                    1
-                ),
-
-            "Total Pair Score":
-                round(
-                    total_score,
-                    1
-                ),
-
-            "Key Cards":
-                ", ".join(
-                    [
-                        c["Card"]
-                        for c in cards
-                    ]
-                )
-        })
-
-    if pair_rows:
-
-        pair_df = pd.DataFrame(
-            pair_rows
-        )
-
-        pair_df = pair_df.sort_values(
-            by="Total Pair Score",
-            ascending=False
-        )
-
-        st.dataframe(
-            pair_df,
-            hide_index=True,
-            use_container_width=True
-        )
-
+    st.dataframe(
+        pair_df,
+        hide_index=True,
+        use_container_width=True
+    )
     # --------------------------------
     # MULTICOLOR REWARDS
     # --------------------------------
