@@ -335,255 +335,255 @@ if st.button("Analyze Pool"):
         use_container_width=True
     )
 
-        # --------------------------------
-        # CANDIDATE COLOR PAIRS
-        # --------------------------------
-        
-        st.header(
-            "Candidate Color Pairs"
+  # --------------------------------
+# CANDIDATE COLOR PAIRS
+# --------------------------------
+
+st.header(
+    "Candidate Color Pairs"
+)
+
+pair_rows = []
+
+for pair, cards in pair_rewards.items():
+
+    colors = [
+        c.strip()
+        for c in pair.split(",")
+        if c.strip()
+    ]
+
+    reward_strength = 0
+
+    premiums = 0
+
+    for card in cards:
+
+        if (
+            card["GIH_Num"]
+            is not None
+            and card["Tier"] in [
+                "S",
+                "A",
+                "B"
+            ]
+        ):
+
+            reward_strength += (
+                card["GIH_Num"]
+            )
+
+            premiums += 1
+
+    total_score = reward_strength
+
+    for color in colors:
+
+        total_score += mono_strength.get(
+            color,
+            0
         )
-        
-        pair_rows = []
-        
-        for pair, cards in pair_rewards.items():
-        
-            colors = [
-                c.strip()
-                for c in pair.split(",")
-                if c.strip()
-            ]
-        
-            reward_strength = 0
-        
-            premiums = 0
-        
-            for card in cards:
-        
-                if (
-                    card["GIH_Num"]
-                    is not None
-                    and card["Tier"] in [
-                        "S",
-                        "A",
-                        "B"
-                    ]
-                ):
-        
-                    reward_strength += (
-                        card["GIH_Num"]
-                    )
-        
-                    premiums += 1
-        
-            total_score = reward_strength
-        
-            for color in colors:
-        
-                total_score += mono_strength.get(
-                    color,
-                    0
-                )
-        
-            pair_rows.append({
-        
-                "Pair":
-                    pair,
-        
-                "Premiums":
-                    premiums,
-        
-                "Reward Strength":
-                    round(
-                        reward_strength,
-                        1
-                    ),
-        
-                "Total Pair Score":
-                    round(
-                        total_score,
-                        1
-                    ),
-        
-                "Key Cards":
-                    ", ".join(
-                        [
-                            c["Card"]
-                            for c in cards
-                        ]
-                    )
-            })
-        
-        if pair_rows:
-        
-            pair_df = pd.DataFrame(
-                pair_rows
+
+    pair_rows.append({
+
+        "Pair":
+            pair,
+
+        "Premiums":
+            premiums,
+
+        "Reward Strength":
+            round(
+                reward_strength,
+                1
+            ),
+
+        "Total Pair Score":
+            round(
+                total_score,
+                1
+            ),
+
+        "Key Cards":
+            ", ".join(
+                [
+                    c["Card"]
+                    for c in cards
+                ]
             )
-        
-            pair_df = pair_df.sort_values(
-                by="Total Pair Score",
-                ascending=False
-            )
-        
-            st.dataframe(
-                pair_df,
-                hide_index=True,
-                use_container_width=True
-            )
-            # --------------------------------
-            # MULTICOLOR REWARDS
-            # --------------------------------
-        
-            st.header(
-                "🌈 Multicolor Rewards"
-            )
-        
-            reward_rows = []
-        
-            for pair, cards in pair_rewards.items():
-        
-                strength = 0
-        
-                premiums = 0
-        
-                for c in cards:
-        
-                    if (
-                        c["Tier"]
-                        in ["S", "A", "B"]
-                    ):
-        
-                        premiums += 1
-        
-                        if c["GIH_Num"]:
-        
-                            strength += c[
-                                "GIH_Num"
-                            ]
-        
-                reward_rows.append({
-        
-                    "Pair":
-                        pair,
-        
-                    "Premiums":
-                        premiums,
-        
-                    "Premium Strength":
-                        round(
-                            strength,
-                            1
-                        ),
-        
-                    "Best Cards":
-                        ", ".join(
-                            [
-                                c["Card"]
-                                for c in cards
-                            ]
-                        )
-                })
-        
-            reward_df = pd.DataFrame(
-                reward_rows
-            )
-        
-            reward_df = reward_df.sort_values(
-                by="Premium Strength",
-                ascending=False
-            )
-        
-            st.dataframe(
-                reward_df,
-                hide_index=True,
-                use_container_width=True
-            )
-        
-            # --------------------------------
-            # DETAILED COLOR BREAKDOWN
-            # --------------------------------
-        
-            st.header(
-                "Detailed Color Breakdown"
-            )
-        
-            ordered_colors = [
-                "W",
-                "U",
-                "B",
-                "R",
-                "G",
-                "ARTIFACT",
-                "MULTI"
-            ]
-        
-            cols = st.columns(7)
-        
-            for idx, color in enumerate(
-                ordered_colors
+    })
+
+if pair_rows:
+
+    pair_df = pd.DataFrame(
+        pair_rows
+    )
+
+    pair_df = pair_df.sort_values(
+        by="Total Pair Score",
+        ascending=False
+    )
+
+    st.dataframe(
+        pair_df,
+        hide_index=True,
+        use_container_width=True
+    )
+    # --------------------------------
+    # MULTICOLOR REWARDS
+    # --------------------------------
+
+    st.header(
+        "🌈 Multicolor Rewards"
+    )
+
+    reward_rows = []
+
+    for pair, cards in pair_rewards.items():
+
+        strength = 0
+
+        premiums = 0
+
+        for c in cards:
+
+            if (
+                c["Tier"]
+                in ["S", "A", "B"]
             ):
-        
-                cards = color_cards[color]
-        
-                if len(cards) == 0:
-                    continue
-        
-                cards_df = pd.DataFrame(
-                    cards
-                )
-        
-                cards_df["GIH_Sort"] = cards_df[
-                    "GIH_Num"
-                ].fillna(-1)
-        
-                cards_df = cards_df.sort_values(
-                    by="GIH_Sort",
-                    ascending=False
-                )
-        
-                premium_count = len(
-                    cards_df[
-                        cards_df["Tier"].isin(
-                            ["S", "A", "B"]
-                        )
+
+                premiums += 1
+
+                if c["GIH_Num"]:
+
+                    strength += c[
+                        "GIH_Num"
+                    ]
+
+        reward_rows.append({
+
+            "Pair":
+                pair,
+
+            "Premiums":
+                premiums,
+
+            "Premium Strength":
+                round(
+                    strength,
+                    1
+                ),
+
+            "Best Cards":
+                ", ".join(
+                    [
+                        c["Card"]
+                        for c in cards
                     ]
                 )
-        
-                with cols[idx]:
-        
-                    st.subheader(
-                        COLOR_NAMES[color]
-                    )
-        
-                    st.metric(
-                        "Premium",
-                        premium_count
-                    )
-        
-                    if color == "MULTI":
-        
-                        st.dataframe(
-                            cards_df[
-                                [
-                                    "Card",
-                                    "Colors",
-                                    "GIH",
-                                    "Tier"
-                                ]
-                            ],
-                            hide_index=True,
-                            use_container_width=True
-                        )
-        
-                    else:
-        
-                        st.dataframe(
-                            cards_df[
-                                [
-                                    "Card",
-                                    "GIH",
-                                    "Tier"
-                                ]
-                            ],
-                            hide_index=True,
-                            use_container_width=True
-                        )
+        })
+
+    reward_df = pd.DataFrame(
+        reward_rows
+    )
+
+    reward_df = reward_df.sort_values(
+        by="Premium Strength",
+        ascending=False
+    )
+
+    st.dataframe(
+        reward_df,
+        hide_index=True,
+        use_container_width=True
+    )
+
+    # --------------------------------
+    # DETAILED COLOR BREAKDOWN
+    # --------------------------------
+
+    st.header(
+        "Detailed Color Breakdown"
+    )
+
+    ordered_colors = [
+        "W",
+        "U",
+        "B",
+        "R",
+        "G",
+        "ARTIFACT",
+        "MULTI"
+    ]
+
+    cols = st.columns(7)
+
+    for idx, color in enumerate(
+        ordered_colors
+    ):
+
+        cards = color_cards[color]
+
+        if len(cards) == 0:
+            continue
+
+        cards_df = pd.DataFrame(
+            cards
+        )
+
+        cards_df["GIH_Sort"] = cards_df[
+            "GIH_Num"
+        ].fillna(-1)
+
+        cards_df = cards_df.sort_values(
+            by="GIH_Sort",
+            ascending=False
+        )
+
+        premium_count = len(
+            cards_df[
+                cards_df["Tier"].isin(
+                    ["S", "A", "B"]
+                )
+            ]
+        )
+
+        with cols[idx]:
+
+            st.subheader(
+                COLOR_NAMES[color]
+            )
+
+            st.metric(
+                "Premium",
+                premium_count
+            )
+
+            if color == "MULTI":
+
+                st.dataframe(
+                    cards_df[
+                        [
+                            "Card",
+                            "Colors",
+                            "GIH",
+                            "Tier"
+                        ]
+                    ],
+                    hide_index=True,
+                    use_container_width=True
+                )
+
+            else:
+
+                st.dataframe(
+                    cards_df[
+                        [
+                            "Card",
+                            "GIH",
+                            "Tier"
+                        ]
+                    ],
+                    hide_index=True,
+                    use_container_width=True
+                )
