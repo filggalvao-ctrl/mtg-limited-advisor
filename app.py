@@ -524,11 +524,12 @@ if st.button("Analyze Pool"):
         "B",
         "R",
         "G",
-        "ARTIFACT",
+        "COLORLESS",
+        "LANDS",
         "MULTI"
     ]
 
-    cols = st.columns(7)
+    cols = st.columns(8)
 
     for idx, color in enumerate(
         ordered_colors
