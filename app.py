@@ -163,7 +163,8 @@ if st.button("Analyze Pool"):
             "Card": card_name,
             "GIH": gih_display,
             "Tier": tier,
-            "GIH_Num": gih_num
+            "GIH_Num": gih_num,
+            "Colors": colors
         }
 
         # ------------------------
@@ -217,7 +218,9 @@ if st.button("Analyze Pool"):
         if len(cards) == 0:
             continue
 
-        cards_df = pd.DataFrame(cards)
+        cards_df = pd.DataFrame(
+            cards
+        )
 
         cards_df["GIH_Sort"] = cards_df[
             "GIH_Num"
@@ -344,14 +347,31 @@ if st.button("Analyze Pool"):
                 premium_count
             )
 
-            st.dataframe(
-                cards_df[
-                    [
-                        "Card",
-                        "GIH",
-                        "Tier"
-                    ]
-                ],
-                hide_index=True,
-                use_container_width=True
-            )
+            if color == "MULTI":
+
+                st.dataframe(
+                    cards_df[
+                        [
+                            "Card",
+                            "Colors",
+                            "GIH",
+                            "Tier"
+                        ]
+                    ],
+                    hide_index=True,
+                    use_container_width=True
+                )
+
+            else:
+
+                st.dataframe(
+                    cards_df[
+                        [
+                            "Card",
+                            "GIH",
+                            "Tier"
+                        ]
+                    ],
+                    hide_index=True,
+                    use_container_width=True
+                )
