@@ -167,9 +167,9 @@ if st.button("Analyze Pool"):
             "Colors": colors
         }
 
-        # ------------------------
-        # CLASSIFICATION
-        # ------------------------
+        # ----------------------
+        # Classification
+        # ----------------------
 
         if not colors:
 
@@ -206,6 +206,10 @@ if st.button("Analyze Pool"):
                     ].append(
                         entry
                     )
+
+    # --------------------------------
+    # POOL POWER OVERVIEW
+    # --------------------------------
 
     st.header(
         "Pool Power Overview"
@@ -289,6 +293,99 @@ if st.button("Analyze Pool"):
         hide_index=True,
         use_container_width=True
     )
+
+    # --------------------------------
+    # MULTICOLOR REWARDS
+    # --------------------------------
+
+    st.header(
+        "🌈 Multicolor Rewards"
+    )
+
+    multi_cards = color_cards["MULTI"]
+
+    pair_data = {}
+
+    for card in multi_cards:
+
+        colors = card["Colors"]
+
+        if colors not in pair_data:
+
+            pair_data[colors] = {
+                "Premium": 0,
+                "Strength": 0,
+                "Cards": []
+            }
+
+        pair_data[
+            colors
+        ]["Cards"].append(
+            card["Card"]
+        )
+
+        if card["Tier"] in [
+            "S",
+            "A",
+            "B"
+        ]:
+
+            pair_data[
+                colors
+            ]["Premium"] += 1
+
+            if card["GIH_Num"] is not None:
+
+                pair_data[
+                    colors
+                ]["Strength"] += (
+                    card["GIH_Num"]
+                )
+
+    reward_rows = []
+
+    for pair, data in pair_data.items():
+
+        reward_rows.append({
+
+            "Pair":
+                pair,
+
+            "Premiums":
+                data["Premium"],
+
+            "Premium Strength":
+                round(
+                    data["Strength"],
+                    1
+                ),
+
+            "Best Cards":
+                ", ".join(
+                    data["Cards"]
+                )
+        })
+
+    if reward_rows:
+
+        reward_df = pd.DataFrame(
+            reward_rows
+        )
+
+        reward_df = reward_df.sort_values(
+            by="Premium Strength",
+            ascending=False
+        )
+
+        st.dataframe(
+            reward_df,
+            hide_index=True,
+            use_container_width=True
+        )
+
+    # --------------------------------
+    # DETAILED COLOR BREAKDOWN
+    # --------------------------------
 
     st.header(
         "Detailed Color Breakdown"
