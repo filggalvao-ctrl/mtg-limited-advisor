@@ -4,7 +4,8 @@ from supabase import create_client
 
 st.set_page_config(
     page_title="MTG Limited Advisor",
-    page_icon="🧙"
+    page_icon="🧙",
+    layout="wide"
 )
 
 st.title("MTG Limited Advisor")
@@ -14,18 +15,53 @@ pool_text = st.text_area(
     height=400
 )
 
+COLOR_NAMES = {
+    "W": "⚪ White",
+    "U": "🔵 Blue",
+    "B": "⚫ Black",
+    "R": "🔴 Red",
+    "G": "🟢 Green"
+}
+
+def get_tier(gih):
+
+    if gih is None:
+        return "N/A"
+
+    try:
+
+        score = float(
+            str(gih).replace(
+                "%",
+                ""
+            )
+        )
+
+        if score >= 60:
+            return "S"
+
+        if score >= 58:
+            return "A"
+
+        if score >= 55:
+            return "B"
+
+        if score >= 52:
+            return "C"
+
+        return "D"
+
+    except:
+
+        return "N/A"
+
+
 if st.button("Analyze Pool"):
 
     supabase = create_client(
         st.secrets["SUPABASE_URL"],
         st.secrets["SUPABASE_KEY"]
     )
-
-    cards = []
-
-    artifact_count = 0
-    legendary_count = 0
-    creature_count = 0
 
     color_cards = {
         "W": [],
@@ -42,247 +78,255 @@ if st.button("Analyze Pool"):
         if not line:
             continue
 
-        parts = line.split(" ", 1)
+        parts = line.split(
+            " ",
+            1
+        )
 
         if len(parts) != 2:
             continue
 
-        qty = int(parts[0])
         card_name = parts[1]
 
-        rating = (
+        rating_result = (
             supabase
             .table("trk_ratings")
             .select("*")
-            .eq("card_name", card_name)
+            .eq(
+                "card_name",
+                card_name
+            )
             .execute()
         )
 
-        metadata = (
+        meta_result = (
             supabase
             .table("card_metadata")
             .select("*")
-            .eq("card_name", card_name)
+            .eq(
+                "card_name",
+                card_name
+            )
             .execute()
         )
 
-        r = rating.data[0] if rating.data else {}
-        m = metadata.data[0] if metadata.data else {}
+        rating = (
+            rating_result.data[0]
+            if rating_result.data
+            else {}
+        )
 
-        gih = r.get("gih_wr")
+        metadata = (
+            meta_result.data[0]
+            if meta_result.data
+            else {}
+        )
+
+        raw_gih = rating.get(
+            "gih_wr"
+        )
 
         try:
-            gih_numeric = float(
-                str(gih).replace("%", "")
-            )
-        except:
-            gih_numeric = 0
 
-        colors = m.get("colors", "")
+            gih_num = float(
+                str(raw_gih).replace(
+                    "%",
+                    ""
+                )
+            )
+
+            gih_display = round(
+                gih_num,
+                1
+            )
+
+        except:
+
+            gih_num = None
+            gih_display = "N/A"
+
+        tier = get_tier(
+            raw_gih
+        )
+
+        colors = metadata.get(
+            "colors",
+            ""
+        )
+
+        entry = {
+
+            "Card":
+                card_name,
+
+            "GIH":
+                gih_display,
+
+            "Tier":
+                tier,
+
+            "GIH_Num":
+                gih_num
+        }
 
         if colors:
 
-            split_colors = colors.split(",")
+            for color in colors.split(","):
 
-            for c in split_colors:
+                if color in color_cards:
 
-                if c in color_cards:
+                    color_cards[
+                        color
+                    ].append(
+                        entry
+                    )
 
-                    color_cards[c].append({
-                        "Card": card_name,
-                        "GIH": gih_numeric
-                    })
-
-        is_artifact = bool(
-            m.get("is_artifact", False)
-        )
-
-        is_legendary = bool(
-            m.get("is_legendary", False)
-        )
-
-        is_creature = bool(
-            m.get("is_creature", False)
-        )
-
-        if is_artifact:
-            artifact_count += qty
-
-        if is_legendary:
-            legendary_count += qty
-
-        if is_creature:
-            creature_count += qty
-
-        cards.append({
-
-            "Quantity": qty,
-
-            "Card": card_name,
-
-            "GIH WR": gih,
-
-            "GIH Numeric": gih_numeric,
-
-            "Colors": colors,
-
-            "Type": m.get(
-                "type_line",
-                ""
-            ),
-
-            "Artifact": is_artifact,
-
-            "Legendary": is_legendary,
-
-            "Creature": is_creature
-        })
-
-    df = pd.DataFrame(cards)
-
-    df = df.sort_values(
-        by="GIH Numeric",
-        ascending=False
+    st.header(
+        "Pool Power Overview"
     )
 
-    st.subheader("Pool Summary")
+    summary_rows = []
 
-    c1, c2, c3 = st.columns(3)
+    for color, cards in color_cards.items():
 
-    c1.metric(
-        "Artifacts",
-        artifact_count
-    )
-
-    c2.metric(
-        "Legendaries",
-        legendary_count
-    )
-
-    c3.metric(
-        "Creatures",
-        creature_count
-    )
-
-    st.subheader(
-        "Power By Color"
-    )
-
-    analysis_rows = []
-
-    for color, card_list in color_cards.items():
-
-        if len(card_list) == 0:
+        if len(cards) == 0:
             continue
 
-        s_tier = len(
-            [x for x in card_list if x["GIH"] >= 60]
+        cards_df = pd.DataFrame(
+            cards
         )
 
-        a_tier = len(
-            [x for x in card_list if 58 <= x["GIH"] < 60]
-        )
+        cards_df["GIH_Sort"] = cards_df[
+            "GIH_Num"
+        ].fillna(-1)
 
-        b_tier = len(
-            [x for x in card_list if 55 <= x["GIH"] < 58]
-        )
-
-        c_tier = len(
-            [x for x in card_list if 52 <= x["GIH"] < 55]
-        )
-
-        d_tier = len(
-            [x for x in card_list if x["GIH"] < 52]
-        )
-
-        playable = (
-            s_tier +
-            a_tier +
-            b_tier
-        )
-
-        score = (
-            s_tier * 10 +
-            a_tier * 7 +
-            b_tier * 4 +
-            c_tier * 2
-        )
-
-        analysis_rows.append({
-
-            "Color": color,
-
-            "Score": score,
-
-            "Playable":
-                playable,
-
-            "S >60":
-                s_tier,
-
-            "A 58-60":
-                a_tier,
-
-            "B 55-58":
-                b_tier,
-
-            "C 52-55":
-                c_tier,
-
-            "D <52":
-                d_tier
-        })
-
-    analysis_df = pd.DataFrame(
-        analysis_rows
-    )
-
-    analysis_df = analysis_df.sort_values(
-        by="Score",
-        ascending=False
-    )
-
-    st.dataframe(
-        analysis_df,
-        hide_index=True
-    )
-
-    st.subheader(
-        "Top Cards By Color"
-    )
-
-    for color, card_list in color_cards.items():
-
-        if len(card_list) == 0:
-            continue
-
-        st.markdown(
-            f"### {color}"
-        )
-
-        temp = pd.DataFrame(
-            card_list
-        )
-
-        temp = temp.sort_values(
-            by="GIH",
+        cards_df = cards_df.sort_values(
+            by="GIH_Sort",
             ascending=False
         )
 
-        st.dataframe(
-            temp.head(8),
-            hide_index=True
+        premium_df = cards_df[
+            cards_df["Tier"].isin(
+                ["S", "A", "B"]
+            )
+        ]
+
+        premium_count = len(
+            premium_df
         )
 
-    st.subheader(
-        "Best Cards By GIH WR"
+        premium_strength = round(
+            premium_df[
+                "GIH_Sort"
+            ].sum(),
+            1
+        )
+
+        best_three = cards_df.head(3)
+
+        top_cards = " | ".join(
+            [
+                f"{row['Card']} ({row['GIH']})"
+                for _, row
+                in best_three.iterrows()
+            ]
+        )
+
+        summary_rows.append({
+
+            "Color":
+                COLOR_NAMES[
+                    color
+                ],
+
+            "Premium":
+                premium_count,
+
+            "Premium Strength":
+                premium_strength,
+
+            "Best Cards":
+                top_cards
+        })
+
+    summary_df = pd.DataFrame(
+        summary_rows
+    )
+
+    summary_df = summary_df.sort_values(
+        by="Premium Strength",
+        ascending=False
     )
 
     st.dataframe(
-        df.drop(
-            columns=[
-                "GIH Numeric"
-            ]
-        ),
-        hide_index=True
+        summary_df,
+        hide_index=True,
+        use_container_width=True
     )
+
+    st.header(
+        "Detailed Color Breakdown"
+    )
+
+    ordered_colors = [
+        "W",
+        "U",
+        "B",
+        "R",
+        "G"
+    ]
+
+    cols = st.columns(5)
+
+    for idx, color in enumerate(
+        ordered_colors
+    ):
+
+        cards = color_cards[color]
+
+        if len(cards) == 0:
+            continue
+
+        cards_df = pd.DataFrame(
+            cards
+        )
+
+        cards_df["GIH_Sort"] = cards_df[
+            "GIH_Num"
+        ].fillna(-1)
+
+        cards_df = cards_df.sort_values(
+            by="GIH_Sort",
+            ascending=False
+        )
+
+        premium_count = len(
+            cards_df[
+                cards_df["Tier"].isin(
+                    ["S", "A", "B"]
+                )
+            ]
+        )
+
+        with cols[idx]:
+
+            st.subheader(
+                COLOR_NAMES[color]
+            )
+
+            st.metric(
+                "Premium",
+                premium_count
+            )
+
+            st.dataframe(
+                cards_df[
+                    [
+                        "Card",
+                        "GIH",
+                        "Tier"
+                    ]
+                ],
+                hide_index=True,
+                use_container_width=True
+            )
