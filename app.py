@@ -23,28 +23,27 @@ COLOR_NAMES = {
     "G": "🟢 Green"
 }
 
-
 def get_tier(gih):
 
     try:
 
-        v = float(
+        score = float(
             str(gih).replace(
                 "%",
                 ""
             )
         )
 
-        if v >= 60:
+        if score >= 60:
             return "S"
 
-        if v >= 58:
+        if score >= 58:
             return "A"
 
-        if v >= 55:
+        if score >= 55:
             return "B"
 
-        if v >= 52:
+        if score >= 52:
             return "C"
 
         return "D"
@@ -54,20 +53,20 @@ def get_tier(gih):
         return "D"
 
 
-def tier_score(tier):
+def premium_count(cards):
 
-    scores = {
-        "S": 5,
-        "A": 3,
-        "B": 2,
-        "C": 1,
-        "D": 0
-    }
+    count = 0
 
-    return scores.get(
-        tier,
-        0
-    )
+    for card in cards:
+
+        if card["Tier"] in [
+            "S",
+            "A",
+            "B"
+        ]:
+            count += 1
+
+    return count
 
 
 if st.button("Analyze Pool"):
@@ -163,7 +162,7 @@ if st.button("Analyze Pool"):
             ""
         )
 
-        card_data = {
+        entry = {
 
             "Card":
                 card_name,
@@ -177,82 +176,51 @@ if st.button("Analyze Pool"):
 
         if colors:
 
-            split_colors = colors.split(",")
-
-            for color in split_colors:
+            for color in colors.split(","):
 
                 if color in color_cards:
 
                     color_cards[
                         color
                     ].append(
-                        card_data
+                        entry
                     )
 
     st.header(
-        "Pool Power Map"
+        "Pool Power Overview"
     )
 
     summary_rows = []
 
     for color, cards in color_cards.items():
 
-        s = len(
+        if len(cards) == 0:
+            continue
+
+        cards_sorted = sorted(
+            cards,
+            key=lambda x: x["GIH"],
+            reverse=True
+        )
+
+        best_three = cards_sorted[:3]
+
+        top_cards = " | ".join(
             [
-                c
-                for c in cards
-                if c["Tier"] == "S"
+                f"{c['Card']} ({c['GIH']:.1f})"
+                for c in best_three
             ]
-        )
-
-        a = len(
-            [
-                c
-                for c in cards
-                if c["Tier"] == "A"
-            ]
-        )
-
-        b = len(
-            [
-                c
-                for c in cards
-                if c["Tier"] == "B"
-            ]
-        )
-
-        power_score = sum(
-            tier_score(
-                c["Tier"]
-            )
-            for c in cards
-        )
-
-        premium_count = (
-            s + a + b
         )
 
         summary_rows.append({
-
             "Color":
-                COLOR_NAMES[
-                    color
-                ],
+                COLOR_NAMES[color],
 
             "Premium":
-                premium_count,
+                premium_count(cards),
 
-            "Power Score":
-                power_score,
-
-            "S":
-                s,
-
-            "A":
-                a,
-
-            "B":
-                b
+            "Best Cards":
+                top_cards
         })
 
     summary_df = pd.DataFrame(
@@ -260,46 +228,73 @@ if st.button("Analyze Pool"):
     )
 
     summary_df = summary_df.sort_values(
-        by="Power Score",
+        by="Premium",
         ascending=False
     )
 
     st.dataframe(
         summary_df,
-        hide_index=True
+        hide_index=True,
+        use_container_width=True
     )
 
     st.header(
-        "Top Cards By Color"
+        "Detailed Color Breakdown"
     )
 
-    for color, cards in color_cards.items():
+    cols = st.columns(5)
+
+    ordered_colors = [
+        "W",
+        "U",
+        "B",
+        "R",
+        "G"
+    ]
+
+    for idx, color in enumerate(
+        ordered_colors
+    ):
+
+        cards = color_cards[color]
 
         if len(cards) == 0:
             continue
 
-        color_df = pd.DataFrame(
+        cards_df = pd.DataFrame(
             cards
         )
 
-        color_df = color_df.sort_values(
+        cards_df = cards_df.sort_values(
             by="GIH",
             ascending=False
         )
 
-        color_df = color_df[
-            color_df["Tier"] != "D"
+        cards_df = cards_df[
+            cards_df["Tier"] != "D"
         ]
 
-        if len(color_df) == 0:
-            continue
+        with cols[idx]:
 
-        st.subheader(
-            COLOR_NAMES[color]
-        )
+            st.subheader(
+                COLOR_NAMES[color]
+            )
 
-        st.dataframe(
-            color_df,
-            hide_index=True,
-            use_container_width=True
-        )
+            st.metric(
+                "Premium",
+                premium_count(
+                    cards
+                )
+            )
+
+            st.dataframe(
+                cards_df[
+                    [
+                        "Card",
+                        "GIH",
+                        "Tier"
+                    ]
+                ],
+                hide_index=True,
+                use_container_width=True
+            )
