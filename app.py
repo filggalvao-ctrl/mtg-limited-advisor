@@ -103,7 +103,15 @@ if st.button("Analyze Pool"):
 
         if len(parts) != 2:
             continue
+        try:
+        
+            quantity = int(
+                parts[0]
+            )
+        
+        except:
 
+            quantity = 1
         card_name = parts[1]
 
         rating_result = (
@@ -174,6 +182,7 @@ if st.button("Analyze Pool"):
 
         entry = {
             "Card": card_name,
+            "Qty": quantity,
             "GIH": gih_display,
             "Tier": tier,
             "GIH_Num": gih_num,
@@ -292,14 +301,20 @@ if st.button("Analyze Pool"):
             )
         ]
 
-        premium_count = len(
-            premium_df
-        )
+        premium_count = premium_df[
+            "Qty"
+        ].sum()
 
         premium_strength = round(
-            premium_df[
-                "GIH_Sort"
-            ].sum(),
+            (
+                premium_df[
+                    "GIH_Sort"
+                ]   
+                *
+                premium_df[
+                    "Qty"
+                ]
+            ).sum(),
             1
         )
 
@@ -377,9 +392,13 @@ if st.button("Analyze Pool"):
 
                 reward_strength += (
                     card["GIH_Num"]
+                    *
+                    card["Qty"]
                 )
 
-                premiums += 1
+                premiums += (
+                    card["Qty"]
+                )
 
         total_score = (
             mono_strength.get(
@@ -468,9 +487,11 @@ if st.button("Analyze Pool"):
 
                 if c["GIH_Num"]:
 
-                    strength += c[
-                        "GIH_Num"
-                    ]
+                    strength += (
+                        c["GIH_Num"]
+                        *
+                        c["Qty"]
+                    )
 
         reward_rows.append({
 
