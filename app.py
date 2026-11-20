@@ -602,7 +602,7 @@ if st.button("Analyze Pool"):
             if color == "MULTI":
 
                 st.dataframe(
-                    cards_df.head(4)
+                    cards_df.head(premium_count)
                     ,
                     hide_index=True,
                     use_container_width=True
@@ -617,7 +617,7 @@ if st.button("Analyze Pool"):
                             "GIH",
                             "Tier"
                         ]
-                    ].head(4),
+                    ].head(premium_count),
                     hide_index=True,
                     use_container_width=True
                 )
