@@ -285,11 +285,7 @@ if st.button("Analyze Pool"):
         cards_df = pd.DataFrame(
             cards
         )
-        cards_df["Display"] = (
-            cards_df["Qty"].astype(str)
-            + "x "
-            + cards_df["Card"]
-        )
+        cards_df["Display"] = cards_df["Card"]
         cards_df["GIH_Sort"] = cards_df[
             "GIH_Num"
         ].fillna(-1)
