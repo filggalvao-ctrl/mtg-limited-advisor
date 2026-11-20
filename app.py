@@ -594,18 +594,13 @@ if st.button("Analyze Pool"):
                 "Premium",
                 premium_count
             )
-
+            st.write(color)
+            st.write(cards_df.columns.tolist())
             if color == "MULTI":
 
                 st.dataframe(
-                    cards_df[
-                        [
-                            "Display",
-                            "Colors",
-                            "GIH",
-                            "Tier"
-                        ]
-                    ],
+                    cards_df
+                    ,
                     hide_index=True,
                     use_container_width=True
                 )
