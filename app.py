@@ -368,80 +368,92 @@ if st.button("Analyze Pool"):
         "Candidate Color Pairs"
     )
 
-    pair_rows = []
-
-    for pair, cards in pair_rewards.items():
-
-        c1, c2 = pair.split(",")
-
-        reward_strength = 0
-
-        premiums = 0
-
-        for card in cards:
-
-            if (
-                card["GIH_Num"]
-                is not None
-                and card["Tier"] in [
-                    "S",
-                    "A",
-                    "B"
-                ]
-            ):
-
-                reward_strength += (
+        pair_rows = []
+        
+        candidate_pairs = [
+            ("W", "U"),
+            ("W", "B"),
+            ("W", "R"),
+            ("W", "G"),
+            ("U", "B"),
+            ("U", "R"),
+            ("U", "G"),
+            ("B", "R"),
+            ("B", "G"),
+            ("R", "G")
+        ]
+        
+        for c1, c2 in candidate_pairs:
+        
+            pair_key = ",".join(
+                sorted(
+                    [c1, c2]
+                )
+            )
+        
+            cards = pair_rewards.get(
+                pair_key,
+                []
+            )
+        
+            reward_strength = 0
+        
+            premiums = 0
+        
+            for card in cards:
+        
+                if (
                     card["GIH_Num"]
-                    *
-                    card["Qty"]
+                    is not None
+                    and card["Tier"] in [
+                        "S",
+                        "A",
+                        "B"
+                    ]
+                ):
+        
+                    reward_strength += (
+                        card["GIH_Num"]
+                        *
+                        card["Qty"]
+                    )
+        
+                    premiums += (
+                        card["Qty"]
+                    )
+        
+            total_score = (
+                mono_strength.get(
+                    c1,
+                    0
                 )
-
-                premiums += (
-                    card["Qty"]
+                +
+                mono_strength.get(
+                    c2,
+                    0
                 )
-
-        total_score = (
-            mono_strength.get(
-                c1,
-                0
+                +
+                reward_strength
             )
-            +
-            mono_strength.get(
-                c2,
-                0
-            )
-            +
-            reward_strength
-        )
-
-        pair_rows.append({
-
-            "Pair":
-                pair,
-
-            "Premiums":
-                premiums,
-
-            "Reward Strength":
-                round(
+        
+            pair_rows.append({
+                "Pair": pair_key,
+                "Premiums": premiums,
+                "Reward Strength": round(
                     reward_strength,
                     1
                 ),
-
-            "Total Pair Score":
-                round(
+                "Total Pair Score": round(
                     total_score,
                     1
                 ),
-
-            "Key Cards":
-                ", ".join(
+                "Key Cards": ", ".join(
                     [
                         c["Card"]
                         for c in cards
                     ]
                 )
-        })
+            })
 
     if pair_rows:
 
