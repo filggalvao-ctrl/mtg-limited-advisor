@@ -265,7 +265,11 @@ if st.button("Analyze Pool"):
 
                         mono_strength[
                             color
-                        ] += gih_num
+                        ] += (
+                            gih_num
+                            *
+                            quantity
+                        )
 
     # --------------------------------
     # POOL POWER OVERVIEW
