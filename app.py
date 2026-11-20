@@ -566,7 +566,11 @@ if st.button("Analyze Pool"):
         cards_df = pd.DataFrame(
             cards
         )
-
+        cards_df["Display"] = (
+            cards_df["Qty"].astype(int).astype(str)
+            + "x "
+            + cards_df["Card"]
+        )
         cards_df["GIH_Sort"] = cards_df[
             "GIH_Num"
         ].fillna(-1)
@@ -594,8 +598,7 @@ if st.button("Analyze Pool"):
                 "Premium",
                 premium_count
             )
-            st.write(color)
-            st.write(cards_df.columns.tolist())
+            
             if color == "MULTI":
 
                 st.dataframe(
