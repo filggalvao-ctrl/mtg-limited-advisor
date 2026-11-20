@@ -483,7 +483,9 @@ if st.button("Analyze Pool"):
                 in ["S", "A", "B"]
             ):
 
-                premiums += 1
+                premiums += (
+                    c["Qty"]
+                )
 
                 if c["GIH_Num"]:
 
