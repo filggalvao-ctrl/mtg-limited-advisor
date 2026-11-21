@@ -29,38 +29,39 @@ supabase = create_client(
 # --------------------------------------------------
 
 def parse_card_list(text):
-    """
-    Converts:
-
-    2 Kirk, Commanding Officer
-
-    into
-
-    {
-        "Kirk, Commanding Officer": 2
-    }
-
-    Ignores:
-    Deck
-    Sideboard
-    """
 
     cards = {}
 
     if not text:
         return cards
 
-    for line in text.split("\n"):
+    lines = [
+        line.strip()
+        for line in text.split("\n")
+        if line.strip()
+    ]
 
-        line = line.strip()
+    has_deck_section = any(
+        line.lower() == "deck"
+        for line in lines
+    )
 
-        if not line:
+    processing = not has_deck_section
+
+    for line in lines:
+
+        lower_line = line.lower()
+
+        if lower_line == "deck":
+
+            processing = True
             continue
 
-        if line.lower() in [
-            "deck",
-            "sideboard"
-        ]:
+        if lower_line == "sideboard":
+
+            break
+
+        if not processing:
             continue
 
         parts = line.split(
