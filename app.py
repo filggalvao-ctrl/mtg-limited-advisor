@@ -166,7 +166,12 @@ def generate_event_name():
     return (
         f"Star Trek Sealed #{next_id:03d}"
     )
+    def clear_form():
 
+    st.session_state.pool_text = ""
+    st.session_state.draftsim_text = ""
+    st.session_state.player_text = ""
+    st.session_state.notes = ""
 # --------------------------------------------------
 # UI
 # --------------------------------------------------
@@ -284,6 +289,13 @@ if st.button(
 # --------------------------------------------------
 # SAVE EVENT
 # --------------------------------------------------
+if st.button(
+    "Clear Form"
+):
+
+    clear_form()
+
+    st.rerun()
 
 if st.button(
     "Save Event"
@@ -486,11 +498,7 @@ if st.button(
         st.write(
             f"Player Power: {player_power}"
         )
-        st.session_state["pool_text"] = ""
-        st.session_state["draftsim_text"] = ""
-        st.session_state["player_text"] = ""
-        st.session_state["notes"] = ""
-        st.rerun()
+        
     except Exception as e:
 
         st.error(
