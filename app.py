@@ -173,19 +173,19 @@ def generate_event_name():
 
 pool_text = st.text_area(
     "Pool",
-    height=300
+    height=300,
     key="pool_text"
 )
 
 draftsim_text = st.text_area(
     "Draftsim Recommendation",
-    height=300
+    height=300,
     key="draftsim_text"
 )
 
 player_text = st.text_area(
     "Player Final Deck",
-    height=300
+    height=300,
     key="player_text"
 )
 
@@ -219,7 +219,7 @@ draftsim_score = st.number_input(
 
 notes = st.text_area(
     "Notes",
-    height=150
+    height=150,
     key="notes"
 )
 
