@@ -168,10 +168,10 @@ def generate_event_name():
     )
     def clear_form():
 
-    st.session_state.pool_text = ""
-    st.session_state.draftsim_text = ""
-    st.session_state.player_text = ""
-    st.session_state.notes = ""
+        st.session_state.pool_text = ""
+        st.session_state.draftsim_text = ""
+        st.session_state.player_text = ""
+        st.session_state.notes = ""
 # --------------------------------------------------
 # UI
 # --------------------------------------------------
