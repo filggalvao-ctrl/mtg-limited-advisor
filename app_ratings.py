@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from supabase import create_client
-
+from datetime import date
 st.title("MTG Limited Advisor")
 
 uploaded_file = st.file_uploader(
@@ -86,7 +86,9 @@ if uploaded_file:
                 key
             )
 
-            clean_df["snapshot_date"] = "2026-11-18"
+            clean_df["snapshot_date"] = str(
+                date.today()
+            )
 
             # converter tudo para texto/objeto
             clean_df = clean_df.astype(object)
@@ -126,8 +128,9 @@ if uploaded_file:
 
                     supabase.table(
                         "trk_ratings"
-                    ).insert(
-                        batch
+                    ).upsert(
+                        batch,
+                        on_conflict="card_name"
                     ).execute()
 
                     uploaded += len(batch)
